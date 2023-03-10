@@ -1,9 +1,0 @@
-/**
- * 
- */
-/**
- * @author robson
- *
- */
-module loja {
-}

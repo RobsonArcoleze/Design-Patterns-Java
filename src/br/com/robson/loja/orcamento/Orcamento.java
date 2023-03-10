@@ -1,4 +1,4 @@
-package br.com.robson.loja.services;
+package br.com.robson.loja.orcamento;
 
 import java.math.BigDecimal;
 
