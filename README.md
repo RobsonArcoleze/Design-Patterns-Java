@@ -94,3 +94,212 @@ public class CalculadoraDeImposto {
 ```
 
 
+### Chain of Responsibility
+
+Corrente de responsabilidades. Esse padrão diferente do Strategy que é conhecido a regra que precisa ser aplicada, no chain of responbility essa regra precisa ser testada. Vejamos um exemplo para melhor entendimento.
+
+
+Essa Classe Irá testar se o desconto está sendo aplicado:
+```
+package br.com.robson.loja;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.desconto.CalculadoraDeDescontos;
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class TestesDescontos {
+
+	public static void main(String[] args) {
+
+		Orcamento orcamento = new Orcamento(new BigDecimal("200"), 6);
+		Orcamento orcamento2 = new Orcamento(new BigDecimal("1000"), 1);
+
+		CalculadoraDeDescontos calculadora = new CalculadoraDeDescontos();
+
+		System.out.println(calculadora.calcula(orcamento));
+		System.out.println(calculadora.calcula(orcamento2));
+	}
+
+}
+```
+
+Essa classe é responsável por calcular o desconto:
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class CalculadoraDeDescontos {
+
+	public BigDecimal calcula(Orcamento orcamento) {
+		if(orcamento.getQuantidadeItens() > 5) {
+			return orcamento.getValor().multiply(new BigDecimal("0.1"));
+		}
+		if(orcamento.getValor().compareTo(new BigDecimal("500")) > 0) {
+			return orcamento.getValor().multiply(new BigDecimal("0.1"));
+		}
+		return BigDecimal.ZERO;
+	}
+}
+```
+
+Observe que a verificação com if não pode ser tirada com a aplicação do padrão Strategy, mesmo que separe em classes distintas e implemente a assinatura do método de uma interface, ainda sim é preciso verficar com o if. Nesse caso o melhor padrão para se aplicar é Chain of Responsibility. Vejamos sua implementação:
+
+
+Essa é a classe de teste, perceba que ela continua da mesma forma.
+```
+package br.com.robson.loja;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.desconto.CalculadoraDeDescontos;
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class TestesDescontos {
+
+	public static void main(String[] args) {
+		
+		Orcamento orcamento = new Orcamento(new BigDecimal("200"), 6);
+		Orcamento orcamento2 = new Orcamento(new BigDecimal("1000"), 1);
+		
+		CalculadoraDeDescontos calculadora = new CalculadoraDeDescontos();
+		
+		System.out.println(calculadora.calcula(orcamento));
+		System.out.println(calculadora.calcula(orcamento2));
+	}
+
+}
+```
+
+
+Agora vamos criar uma classe mãe abstrata:
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public abstract class Desconto {
+	
+	protected Desconto proximo;
+
+	public Desconto(Desconto proximo) {
+		this.proximo = proximo;
+	}
+	
+	public abstract BigDecimal calcular(Orcamento orcamento);
+
+}
+```
+
+Perceba que temos um atributo protected, ou seja, ele é visivel para a classe e também para os filhos. Ele tem como tipo o 'Desconto' chamado de próximo, ou seja, na implementação se a sua verificação for falsa vai chamar o próximo desconto. Vejamos as classes que extendem o Desconto:
+
+
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class DescontoParaOrcamentoComMaisDeCincoItens extends Desconto {
+
+	public DescontoParaOrcamentoComMaisDeCincoItens(Desconto proximo) {
+		super(proximo);
+	}
+
+	public BigDecimal calcular(Orcamento orcamento) {
+		if(orcamento.getQuantidadeItens() > 5) {
+			return orcamento.getValor().multiply(new BigDecimal("0.1"));
+		}
+		return proximo.calcular(orcamento);
+	}
+}
+
+```
+
+A primeira vista parece ser complicado de entender, mas basicamente o que esse código faz é verificar se o orçamento.getQuantidadeItens() > 5, então se aplica o desconto, caso contrário se chama o próximo desconto, vejamos as outras classe para melhor entendemos:
+
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class DescontoParaOrcamentoComValorMaiorQueQuinhentos extends Desconto {
+
+	public DescontoParaOrcamentoComValorMaiorQueQuinhentos(Desconto proximo) {
+		super(proximo);
+	}
+	
+	public BigDecimal calcular(Orcamento orcamento) {
+		if(orcamento.getValor().compareTo(new BigDecimal("500")) > 0) {
+			return orcamento.getValor().multiply(new BigDecimal("0.05"));
+		}
+		return proximo.calcular(orcamento);
+	}
+}
+```
+
+
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class SemDesconto extends Desconto {
+
+	public SemDesconto() {
+		super(null);
+	}
+
+	public BigDecimal calcular(Orcamento orcamento) {
+		return BigDecimal.ZERO;
+	}
+}
+```
+
+
+Agora que criamos todas as classes que contem as regras de descontos, retornemos a classe CalculadoraDeDescontos, essa classe é o ponto chave para entendermos o código;
+
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class CalculadoraDeDescontos {
+
+	public BigDecimal calcula(Orcamento orcamento) {
+		
+		Desconto desconto = new DescontoParaOrcamentoComMaisDeCincoItens(
+				new DescontoParaOrcamentoComValorMaiorQueQuinhentos(
+						new SemDesconto()));
+		
+		return desconto.calcular(orcamento);
+	}
+}
+
+```
+
+Observe como a classe ficou menos verbosa, e de fácil entendimento. Vamos entender o que esse código nos mostra.
+
+Está sendo chamada a classe desconto com instancias de cada tipo de desconto. Lembre-se que cada tipo de desconto é filha de **Desconto**, e que dentro das classes filhas existe um construtor com o atributo "Desconto próximo", pois bem, quando chamo ``` new DescontoParaOrcamentoComMaisDeCincoItens() ``` dentro da sua classe é feita a verificação, caso seja verdadeiro ele retorna o desconto.calcular(orcamento), caso seja falso ele chama o próximo desconto ``` new DescontoParaOrcamentoComMaisDeCincoItens(new DescontoParaOrcamentoComValorMaiorQueQuinhentos() ```.
+
+Para que se tenha um fim foi criado a classe Sem desconto, ou seja, depois de fazer todas as verificações, não existe mais desconto e se retorna um BigDecimal.ZERO;
+
+
+
+
+
+
+
+
