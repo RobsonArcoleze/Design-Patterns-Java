@@ -297,6 +297,136 @@ Está sendo chamada a classe desconto com instancias de cada tipo de desconto. L
 Para que se tenha um fim foi criado a classe Sem desconto, ou seja, depois de fazer todas as verificações, não existe mais desconto e se retorna um BigDecimal.ZERO;
 
 
+### Template Method
+
+O Template Method é um padrão de projeto comportamental que define o esqueleto de um algoritmo na superclasse mas deixa as subclasses sobrescreverem etapas específicas do algoritmo sem modificar sua estrutura.
+Vejamos o código para melhor entendimento:
+
+```
+public BigDecimal calcular(Orcamento orcamento) {
+		if(orcamento.getValor().compareTo(new BigDecimal("500")) > 0) {
+			return orcamento.getValor().multiply(new BigDecimal("0.05"));
+		}
+		return proximo.calcular(orcamento);
+	}
+```
+Todas as classes filhas tinham em comum o método calcular, ainda que  com suas implementações especificas; ou seja sempre havia repetição de código. O que fazer nesse caso?
+
+Bom nesse caso vamos extrair o metodo ```calcular ``` para a classe mãe; Nas classes filhas os metodos se chamarão ```efetuarCalculo```, Vejamos o código para melhor entendimento:
+
+
+Classe mãe:
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public abstract class Desconto {
+	
+	protected Desconto proximo;
+
+	public Desconto(Desconto proximo) {
+		this.proximo = proximo;
+	}
+	
+	public BigDecimal calcular(Orcamento orcamento) {
+		if (deveAplicar(orcamento)) {
+			return efetuarCalculo(orcamento);
+		}
+		return proximo.calcular(orcamento);
+	}
+	
+	protected abstract BigDecimal efetuarCalculo(Orcamento orcamento);
+	protected abstract boolean deveAplicar (Orcamento orcamento);
+
+}
+```
+
+
+Classe Filha:
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class DescontoParaOrcamentoComMaisDeCincoItens extends Desconto {
+
+	public DescontoParaOrcamentoComMaisDeCincoItens(Desconto proximo) {
+		super(proximo);
+	}
+
+	@Override
+	public BigDecimal efetuarCalculo(Orcamento orcamento) {
+			return orcamento.getValor().multiply(new BigDecimal("0.1"));
+	}
+
+	@Override
+	public boolean deveAplicar(Orcamento orcamento) {
+		return orcamento.getQuantidadeItens() > 5;
+	}
+}
+```
+
+
+Classe Filha:
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class DescontoParaOrcamentoComValorMaiorQueQuinhentos extends Desconto {
+
+	public DescontoParaOrcamentoComValorMaiorQueQuinhentos(Desconto proximo) {
+		super(proximo);
+	}
+	
+	@Override
+	public BigDecimal efetuarCalculo(Orcamento orcamento) {
+			return orcamento.getValor().multiply(new BigDecimal("0.05"));
+	}
+
+	@Override
+	public boolean deveAplicar(Orcamento orcamento) {
+		return orcamento.getValor().compareTo(new BigDecimal("500")) > 0;
+	}
+}
+```
+
+
+Classe Filha:
+```
+package br.com.robson.loja.desconto;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class SemDesconto extends Desconto {
+
+	public SemDesconto() {
+		super(null);
+	}
+
+	@Override
+	public BigDecimal efetuarCalculo(Orcamento orcamento) {
+		return BigDecimal.ZERO;
+	}
+
+	@Override
+	public boolean deveAplicar(Orcamento orcamento) {
+		return true;
+	}
+}
+```
+
+Analisando o código podemos perceber o uso do template method, onde o que era comum entre as classes filhas foram levadas para a mãe, sendo assim o metodo calcular foi implementado de forma concreta com parte da validação. Perceba que o metodo chama outro metodo abstrato que está sendo implementado pelas classes filhas, ou seja, o que era comum entre ambas foi para a classe mãe, o que era especifico, continua com as filhas.
+
 
 
 
