@@ -429,7 +429,48 @@ Analisando o código podemos perceber o uso do template method, onde o que era c
 
 
 
+### Pattern State
 
+O State é um padrão de projeto comportamental que permite que um objeto altere seu comportamento quando seu estado interno muda. Parece como se o objeto mudasse de classe.
+
+Agora vamos implementar uma nova regra de desconto extra, ou seja, caso meu cliente chore tem-se a possibilidade de dar um desconto extra. A principio vamos colocar essa nova regra na classe Orcamento, a lógica ficara desta forma, vamos ao código:
+
+```
+package br.com.robson.loja.orcamento;
+
+import java.math.BigDecimal;
+
+public class Orcamento {
+
+	private BigDecimal valor;
+	private Integer quantidadeItens;
+	private String situacao;
+
+	public Orcamento(BigDecimal valor, Integer quantidadeItens) {
+		this.valor = valor;
+		this.quantidadeItens = quantidadeItens;
+	}
+	
+	public void aplicarDescontoExtra() {
+		BigDecimal valorDoDescontoExtra = BigDecimal.ZERO;
+		if(situacao.equals("EM_ANALISE")){
+			valorDoDescontoExtra = new BigDecimal("0.05");
+		} else if (situacao.equals("APROVADO")) {
+			valorDoDescontoExtra = new BigDecimal("0.02");
+		}
+		this.valor = this.valor.subtract(valorDoDescontoExtra);
+	}
+	
+	public void aprovar() {
+		this.situacao = "APROVADO";
+	}
+
+// GETTERS E SETTERS....
+```
+
+Perceba que a estrutura do nosso código apresenta um monte laços condicionais novamente, iguais aqueles que vimos no começo da nossa implementação, além do valor das nossas condições serem do tipo String, e poderia ser do tipo Enum. O que fazer para melhorar esse código?
+
+Vejamos agora a implementação do **Pattern State**!
 
 
 

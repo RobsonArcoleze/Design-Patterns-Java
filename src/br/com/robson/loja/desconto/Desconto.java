@@ -23,3 +23,4 @@ public abstract class Desconto {
 	protected abstract boolean deveAplicar (Orcamento orcamento);
 
 }
+		
