@@ -433,7 +433,7 @@ Analisando o código podemos perceber o uso do template method, onde o que era c
 
 O State é um padrão de projeto comportamental que permite que um objeto altere seu comportamento quando seu estado interno muda. Parece como se o objeto mudasse de classe.
 
-Agora vamos implementar uma nova regra de desconto extra, ou seja, caso meu cliente chore tem-se a possibilidade de dar um desconto extra. A principio vamos colocar essa nova regra na classe Orcamento, a lógica ficara desta forma, vamos ao código:
+Agora vamos implementar uma nova regra de desconto extra, ou seja, caso meu cliente pechinche, tem-se a possibilidade de dar um desconto extra. A principio vamos colocar essa nova regra na classe Orcamento, a lógica ficara desta forma, vamos ao código:
 
 ```
 package br.com.robson.loja.orcamento;
@@ -468,9 +468,182 @@ public class Orcamento {
 // GETTERS E SETTERS....
 ```
 
-Perceba que a estrutura do nosso código apresenta um monte laços condicionais novamente, iguais aqueles que vimos no começo da nossa implementação, além do valor das nossas condições serem do tipo String, e poderia ser do tipo Enum. O que fazer para melhorar esse código?
+Perceba que a estrutura do nosso código apresenta um monte laços condicionais novamente, iguais aqueles que vimos no começo da nossa implementação, além do valor das nossas condições serem do tipo String, e poderiam ser do tipo Enum. O que fazer para melhorar esse código?
 
 Vejamos agora a implementação do **Pattern State**!
 
+O Pattern State é muito parecido com o Strategy, pois trabalha para eliminar um monte de aninhamento de IF e ELSE, com isso, o código ficará mais legivel, e cada classe terá sua própria responsabilidade. Vejamos como o código ficou:
 
+Primeiro Criamos uma Classe abstrata para sinalizar os estados da situção do orcamento, através dela vamos transitar entre os possiveis estados que o orçamento pode se encontrar. Vejamos o código como ficou:
+
+```
+package br.com.robson.loja.orcamento.situacao;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.DomainException;
+import br.com.robson.loja.orcamento.Orcamento;
+
+public abstract class SituacaoOrcamento {
+	
+	public BigDecimal calcularValorDeDescontoExtra(Orcamento orcamento) {
+		return BigDecimal.ZERO;
+	}
+
+	public void aprovar (Orcamento orcamento) {
+		throw new DomainException("Orçamento não pode ser Aprovado!");
+	}
+	
+	public void reprovar (Orcamento orcamento) {
+		throw new DomainException("Orçamento não pode ser Reprovado!");
+	}
+	
+	public void Finalizar (Orcamento orcamento) {
+		throw new DomainException("Orçamento não pode ser Finalizado!");
+	}
+}
+```
+ Essa classe está representando os possiveis estados em que a situção do orçamento se encontra, porém nela não está contida a situação em análise, pois se está em enalise, não está aprovada, reprovada ou finalizada.
+ 
+ Vejamo sas implementações das outras classes:
+
+```
+package br.com.robson.loja.orcamento.situacao;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class EmAnalise extends SituacaoOrcamento{
+
+	public BigDecimal calcularValorDeDescontoExtra(Orcamento orcamento) {
+		return orcamento.getValor().multiply(new BigDecimal("0.05"));
+	}
+	
+	@Override
+	public void aprovar(Orcamento orcamento) {
+		orcamento.setSituacao(new Aprovado());
+	}
+	
+	@Override
+	public void reprovar(Orcamento orcamento) {
+		orcamento.setSituacao(new Reprovado());
+	}
+}
+
+```
+
+
+```
+package br.com.robson.loja.orcamento.situacao;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class Aprovado extends SituacaoOrcamento{
+
+	public BigDecimal calcularValorDeDescontoExtra(Orcamento orcamento) {
+		return orcamento.getValor().multiply(new BigDecimal("0.05"));
+	}
+	
+	@Override
+	public void Finalizar(Orcamento orcamento) {
+		orcamento.setSituacao(new Finalizado());
+	}
+}
+```
+
+
+A classe finalizado não faz nada, pois está finalizado!
+```
+package br.com.robson.loja.orcamento.situacao;
+
+public class Finalizado extends SituacaoOrcamento{
+}
+
+```
+
+
+```
+package br.com.robson.loja.orcamento.situacao;
+
+import br.com.robson.loja.orcamento.Orcamento;
+
+public class Reprovado extends SituacaoOrcamento{
+
+	@Override
+	public void Finalizar(Orcamento orcamento) {
+		orcamento.setSituacao(new Finalizado());
+	}
+}
+```
+
+Agora que geramos uma classe abstrata, onde cada estado a implementa, vejamos como fica o código na classe Orçamento:
+
+```
+package br.com.robson.loja.orcamento;
+
+import java.math.BigDecimal;
+
+import br.com.robson.loja.orcamento.situacao.EmAnalise;
+import br.com.robson.loja.orcamento.situacao.SituacaoOrcamento;
+
+public class Orcamento {
+
+	private BigDecimal valor;
+	private Integer quantidadeItens;
+	private SituacaoOrcamento situacao;
+
+	public Orcamento(BigDecimal valor, Integer quantidadeItens) {
+		this.valor = valor;
+		this.quantidadeItens = quantidadeItens;
+		this.situacao = new EmAnalise();
+	}
+	
+	public void aplicarDescontoExtra() {
+		BigDecimal valorDoDescontoExtra = this.situacao.calcularValorDeDescontoExtra(this);
+		
+		this.valor = this.valor.subtract(valorDoDescontoExtra);
+	}
+	
+	public void aprovar() {
+		this.situacao.aprovar(this);
+	}
+	
+	public void reprovar() {
+		this.situacao.reprovar(this);
+	}
+	
+	public void finalizar() {
+		this.situacao.Finalizar(this);
+	}
+
+	public SituacaoOrcamento getSituacao() {
+		return situacao;
+	}
+
+	public void setSituacao(SituacaoOrcamento situacao) {
+		this.situacao = situacao;
+	}
+
+	public BigDecimal getValor() {
+		return valor;
+	}
+
+	public Integer getQuantidadeItens() {
+		return quantidadeItens;
+	}
+	
+	
+}
+
+```
+
+A classe abstrata é declarada na classe orçamento; Situação é chamada no construtor sendo instanciada como em análise.
+
+Perceba que o método aplicarDescontoExtra() não tem mais IF e ELSE, agora pega-se o estado atual da situação e chama-se o calcularValorDeDescontoExtra passando como argumento o proprio Orçamento (this).
+
+
+Aplicando este Pattern foi possivel deixar o código mais coeso, tendo cada classe com suas implementações
 
