@@ -647,3 +647,12 @@ Perceba que o método aplicarDescontoExtra() não tem mais IF e ELSE, agora pega
 
 Aplicando este Pattern foi possivel deixar o código mais coeso, tendo cada classe com suas implementações
 
+
+### Pattern Command
+
+
+O Command é um padrão de projeto comportamental que transforma um pedido em um objeto independente que contém toda a informação sobre o pedido. Essa transformação permite que você parametrize métodos com diferentes pedidos, atrase ou coloque a execução do pedido em uma fila, e suporte operações que não podem ser feitas.
+
+Pode ser aplicado em uma arquitetura de camada, onde temos a camada de banco de dados, entidades, services, controllers etc.
+
+Basicamente é a separação entres os serviços.
