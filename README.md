@@ -656,3 +656,11 @@ O Command é um padrão de projeto comportamental que transforma um pedido em um
 Pode ser aplicado em uma arquitetura de camada, onde temos a camada de banco de dados, entidades, services, controllers etc.
 
 Basicamente é a separação entres os serviços.
+
+### Pattern Observer
+
+O padrão Observer é comumente utilizado por diversas bibliotecas que trabalham com eventos. Muitas tecnologias em Java, como o Spring e o CDI, possuem componentes que nos auxiliam a trabalhar com eventos.
+
+A forma como o padrão foi implementado aqui na aula é a mais simples e pura, mas existem diversas modificações que podem ser feitas.
+
+Para entender mais sobre a teoria deste padrão, você pode conferir este link: https://refactoring.guru/design-patterns/observer.
