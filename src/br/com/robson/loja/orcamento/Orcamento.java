@@ -3,6 +3,7 @@ package br.com.robson.loja.orcamento;
 import java.math.BigDecimal;
 
 import br.com.robson.loja.orcamento.situacao.EmAnalise;
+import br.com.robson.loja.orcamento.situacao.Finalizado;
 import br.com.robson.loja.orcamento.situacao.SituacaoOrcamento;
 
 public class Orcamento {
@@ -49,6 +50,10 @@ public class Orcamento {
 
 	public Integer getQuantidadeItens() {
 		return quantidadeItens;
+	}
+	
+	public boolean isFinalizado() {
+		return situacao instanceof Finalizado;
 	}
 	
 	

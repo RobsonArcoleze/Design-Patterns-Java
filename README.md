@@ -710,3 +710,132 @@ O padrão Observer é comumente utilizado por diversas bibliotecas que trabalham
 A forma como o padrão foi implementado aqui na aula é a mais simples e pura, mas existem diversas modificações que podem ser feitas.
 
 Para entender mais sobre a teoria deste padrão, você pode conferir este link: https://refactoring.guru/design-patterns/observer.
+
+
+# Design Patterns-Java
+
+Categorias
+
+
+- Criacionais
+- Estruturais
+- Comportamentais
+
+
+## Estruturais
+
+Categorias:
+
+- Adapter
+- Decorator
+- Composite
+- Facade
+- Proxy
+
+### Adapter
+
+O Adapter é um padrão de projeto estrutural que permite objetos com interfaces incompatíveis colaborarem entre si.
+
+**Problema**
+Imagine que você está criando uma aplicação de monitoramento do mercado de ações da bolsa. A aplicação baixa os dados as ações de múltiplas fontes em formato XML e então mostra gráficos e diagramas maneiros para o usuário.
+
+Em algum ponto, você decide melhorar a aplicação ao integrar uma biblioteca de análise de terceiros. Mas aqui está a pegadinha: a biblioteca só trabalha com dados em formato JSON.
+
+![img](https://refactoring.guru/images/patterns/diagrams/adapter/problem-pt-br.png?id=5429f5de17156d304a588b7cbaa7ed10)
+
+**Solução**
+Você pode criar um adaptador. Ele é um objeto especial que converte a interface de um objeto para que outro objeto possa entendê-lo.
+
+Um adaptador encobre um dos objetos para esconder a complexidade da conversão acontecendo nos bastidores. O objeto encobrido nem fica ciente do adaptador. Por exemplo, você pode encobrir um objeto que opera em metros e quilômetros com um adaptador que converte todos os dados para unidades imperiais tais como pés e milhas.
+
+Adaptadores podem não só converter dados em vários formatos, mas também podem ajudar objetos com diferentes interfaces a colaborar. Veja aqui como funciona:
+
+O adaptador obtém uma interface, compatível com um dos objetos existentes.
+Usando essa interface, o objeto existente pode chamar os métodos do adaptador com segurança.
+Ao receber a chamada, o adaptador passa o pedido para o segundo objeto, mas em um formato e ordem que o segundo objeto espera.
+Algumas vezes é possível criar um adaptador de duas vias que pode converter as chamadas em ambas as direções.
+
+![img](https://refactoring.guru/images/patterns/diagrams/adapter/solution-pt-br.png?id=ffe986cb8e979f54610072f35928d04e)
+
+Vamos voltar à nossa aplicação da bolsa de valores. Para resolver o dilema dos formatos incompatíveis, você pode criar adaptadores XML-para-JSON para cada classe da biblioteca de análise que seu código trabalha diretamente. Então você ajusta seu código para comunicar-se com a biblioteca através desses adaptadores. Quando um adaptador recebe uma chamada, ele traduz os dados entrantes XML em uma estrutura JSON e passa a chamada para os métodos apropriados de um objeto de análise encoberto.
+
+
+Em nossa aplicação implementamos uma classe RegistroDeOrcamento, essa classe precisa se comunicar com uma "API Externa", há varias maneiras de comunição existentes no java, pensando nisso foi implementado o Pattern Adapter, criando uma interface com método post, sendo assim, independente da forma que use para fazer essa comunicação a classe RegistroDeOrcamento não sofre alterações, pois o que será injetado nela será uma interface e não uma classe concreta, ou seja, baixo acoplamento!
+Vejamos o código para melhor entendimento:
+
+
+RegistroDeOrcamento
+```
+package br.com.robson.loja.orcamento;
+
+import java.util.Map;
+
+import br.com.robson.loja.DomainException;
+import br.com.robson.loja.http.HttpAdapter;
+
+public class RegistroDeOrcamento {
+
+	private HttpAdapter http;
+	
+	
+	public RegistroDeOrcamento(HttpAdapter http) {
+		this.http = http;
+	}
+
+
+	public void registrar(Orcamento orcamento) {
+		if(!orcamento.isFinalizado()) {
+			throw new DomainException("Orçamento não finalizado!");
+		}
+		
+		String url = "http://api.externa/orcamento";
+		Map<String, Object> dados = Map.of(
+				"valor", orcamento.getValor(),
+				"quantidadeItens", orcamento.getQuantidadeItens()
+				);
+		
+		http.post(url, dados);
+	}
+}
+```
+
+Interface
+```
+package br.com.robson.loja.http;
+
+import java.util.Map;
+
+public interface HttpAdapter {
+
+	void post (String url, Map<String, Object> dados);
+}
+```
+
+Classe que implementa a Interface
+```
+package br.com.robson.loja.http;
+
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Map;
+
+public class JavaHttpClient implements HttpAdapter {
+
+	@Override
+	public void post(String url, Map<String, Object> dados) {
+		try {
+			URL urlDaApi= new URL(url);
+			URLConnection connection = urlDaApi.openConnection();
+			connection.connect();
+		} catch (Exception e) {
+			throw new RuntimeException("Erro ao enviar requisição	");
+
+		}	
+		
+	}
+
+}
+```
+
+Aplicando o Pattern Adapter, é possivel mudar a implementação de comunição apenas criando uma nova classe que implemente a Interface, sem mexer nas outras formas de comunicação.
+
